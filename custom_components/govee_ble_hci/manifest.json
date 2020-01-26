@@ -1,0 +1,8 @@
+{
+  "domain": "govee_ble_hci",
+  "name": "Govee BLE HCI monitor sensor integration",
+  "documentation": "",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": ["@thrilleratplay"]
+}
