@@ -1,4 +1,4 @@
-"""Govee Thermometer/Humidity BLE HCI monitor integration."""
+"""Govee BLE monitor integration."""
 from datetime import timedelta
 import logging
 import os
@@ -92,7 +92,56 @@ def reverse_mac(rmac):
 
 
 #
-# Parse message from hcitool
+# Parse Govee H5074 message from hcitool
+#
+def parse_raw_message_gvh5074(data):
+    """Parse the raw data."""
+    # _LOGGER.debug(data)
+    if data is None:
+        return None
+
+    if not data.startswith("043E170201040") or "88EC" not in data:
+        return None
+
+    # check if RSSI is valid
+    (rssi,) = struct.unpack("<b", bytes.fromhex(data[-2:]))
+    if not 0 >= rssi >= -127:
+        return None
+
+    # check for MAC presence in message and in service data
+    device_mac_reversed = data[14:26]
+
+    temp_lsb = str(data[40:42]) + str(data[38:40])
+    hum_lsb = str(data[44:46]) + str(data[42:44])
+
+    # parse Govee Encoded data
+    govee_encoded_data = temp_lsb + hum_lsb
+
+    hum_int = int(hum_lsb, 16)
+
+    # Negative temperature stred in two's complement
+    if str(data[40:42]) == "FF":
+        temp_int = int(str(data[38:40]), 16) - 255
+    else:
+        temp_int = int(temp_lsb, 16)
+
+    # parse battery percentage
+    battery = int(data[46:48], 16)
+
+    result = {
+        "rssi": int(rssi),
+        "mac": reverse_mac(device_mac_reversed),
+        "temperature": float(temp_int / 100),
+        "humidity": float(hum_int / 100),
+        "battery": float(battery),
+        "packet": govee_encoded_data,
+    }
+
+    return result
+
+
+#
+# Parse Govee H5075 message from hcitool
 #
 def parse_raw_message_gvh5075(data):
     """Parse the raw data."""
@@ -132,6 +181,7 @@ def parse_raw_message_gvh5075(data):
         "battery": float(battery),
         "packet": govee_encoded_data,
     }
+
     return result
 
 
@@ -176,7 +226,9 @@ class BLEScanner:
 
         # hcidump subprecess
         self.hcidump = subprocess.Popen(
-            ["hcidump", "--raw", "hci"], stdout=self.tempf, stderr=self.devnull,  # noqa
+            ["hcidump", "-i", hci_device, "--raw", "hci"],
+            stdout=self.tempf,
+            stderr=self.devnull,
         )
 
     #
@@ -282,6 +334,9 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         _LOGGER.debug(macs_names)
         for msg in scanner.messages():
             data = parse_raw_message_gvh5075(msg)
+
+            if not data:
+                data = parse_raw_message_gvh5074(msg)
 
             # check for mac and temperature
             # assume humidity, batter and rssi are included
