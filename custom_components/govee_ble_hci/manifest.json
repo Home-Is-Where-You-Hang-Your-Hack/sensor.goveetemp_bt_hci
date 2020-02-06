@@ -1,7 +1,7 @@
 {
   "domain": "govee_ble_hci",
   "name": "Govee BLE HCI monitor sensor integration",
-  "documentation": "",
+  "documentation": "https://github.com/Home-Is-Where-You-Hang-Your-Hack/sensor.goveetemp_bt_hci",
   "requirements": [],
   "dependencies": [],
   "codeowners": ["@thrilleratplay"]
