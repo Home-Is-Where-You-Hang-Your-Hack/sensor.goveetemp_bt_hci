@@ -31,7 +31,7 @@ A custom component for [Home Assistant](https://www.home-assistant.io) that list
 
 **3. Install the custom component:**
 
-- The easiest way is to install it with [HACS](https://hacs.xyz/). First install [HACS](https://hacs.xyz/) if you don't have it yet. After installation, in HACS add https://github.com/Home-Is-Where-You-Hang-Your-Hack/sensor.goveetemp_bt_hci as a custom repo under the Settings tab
+- The easiest way is to install it with [HACS](https://hacs.xyz/). First install [HACS](https://hacs.xyz/) if you don't have it yet. After installation, the custom component can be found in the HACS store under integrations.
 
 - Alternatively, you can install it manually. Just copy paste the content of the `sensor.goveetemp_bt_hci/custom_components` folder in your `config/custom_components` directory.
      As example, you will get the `sensor.py` file in the following path: `/config/custom_components/govee_ble_hci/sensor.py`.
