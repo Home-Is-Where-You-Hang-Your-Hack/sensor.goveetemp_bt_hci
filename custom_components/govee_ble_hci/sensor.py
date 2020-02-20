@@ -432,7 +432,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                         getattr(sensors[0], ATTR)[textattr] = len(m_temp)
                         getattr(sensors[0], ATTR)["median"] = tempstate_med
                         getattr(sensors[0], ATTR)["mean"] = tempstate_mean
-                        updated_sensors[mac+"_temp"] = sensors[0]
+                        updated_sensors[mac + "_temp"] = sensors[0]
                     except AttributeError:
                         _LOGGER.info("Sensor %s not yet ready for update", mac)
                     except ZeroDivisionError:
@@ -461,7 +461,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                         getattr(sensors[1], ATTR)[textattr] = len(m_hum)
                         getattr(sensors[1], ATTR)["median"] = humstate_med
                         getattr(sensors[1], ATTR)["mean"] = humstate_mean
-                        updated_sensors[mac+"_temp"] = sensors[1]
+                        updated_sensors[mac + "_temp"] = sensors[1]
                     except AttributeError:
                         _LOGGER.info("Sensor %s not yet ready for update", mac)
                     except ZeroDivisionError:
