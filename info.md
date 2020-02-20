@@ -1,5 +1,6 @@
 {% if installed or pending_update %}
-Changes in 0.2
+
+#### Changes in 0.2
 
 * Fix limit updates to period interval (Thank you [sfjes](github.com/sfjes))
 
