@@ -325,6 +325,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         lpacket = {}  # last packet number
         rssi = {}
         macs_names = {}  # map of macs to names given
+        updated_sensors = {}
 
         for conf_dev in config[CONF_GOVEE_DEVICES]:
             conf_dev = dict(conf_dev)
@@ -431,7 +432,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                         getattr(sensors[0], ATTR)[textattr] = len(m_temp)
                         getattr(sensors[0], ATTR)["median"] = tempstate_med
                         getattr(sensors[0], ATTR)["mean"] = tempstate_mean
-                        sensors[0].async_schedule_update_ha_state()
+                        updated_sensors[mac+"_temp"] = sensors[0]
                     except AttributeError:
                         _LOGGER.info("Sensor %s not yet ready for update", mac)
                     except ZeroDivisionError:
@@ -460,7 +461,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                         getattr(sensors[1], ATTR)[textattr] = len(m_hum)
                         getattr(sensors[1], ATTR)["median"] = humstate_med
                         getattr(sensors[1], ATTR)["mean"] = humstate_mean
-                        sensors[1].async_schedule_update_ha_state()
+                        updated_sensors[mac+"_temp"] = sensors[1]
                     except AttributeError:
                         _LOGGER.info("Sensor %s not yet ready for update", mac)
                     except ZeroDivisionError:
@@ -469,6 +470,10 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                     except IndexError as error:
                         _LOGGER.error("%s. Index is 1!", error)
                         _LOGGER.error("sensors list size: %i", len(sensors))
+        if len(updated_sensors) > 0:
+            for k, sens in updated_sensors.items():
+                _LOGGER.debug("updating sensor %s", k)
+                sens.async_schedule_update_ha_state()
         scanner.start(config)
         return []
 
