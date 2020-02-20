@@ -1,3 +1,10 @@
+{% if installed or pending_update %}
+Changes in 0.2
+
+* Fix limit updates to period interval (Thank you (sfjes)[github.com/sfjes])
+
+{% endif %}
+
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
