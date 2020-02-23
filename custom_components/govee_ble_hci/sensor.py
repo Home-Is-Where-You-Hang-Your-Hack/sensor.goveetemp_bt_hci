@@ -468,8 +468,8 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                         _LOGGER.error("%s. Index is 1!", error)
                         _LOGGER.error("sensors list size: %i", len(sensors))
 
-        for mac, sensors in sensors_by_mac:
-            if sensors and sensors.length == 2:
+        for mac, sensors in sensors_by_mac.items():
+            if sensors and len(sensors) == 2:
                 _LOGGER.debug("updating sensor %s", mac)
                 for sensor in sensors:
                     sensor.async_schedule_update_ha_state()
