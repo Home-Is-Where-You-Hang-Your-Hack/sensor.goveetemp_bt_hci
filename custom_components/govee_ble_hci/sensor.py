@@ -168,9 +168,15 @@ def parse_raw_message_gvh5075(data):
     device_mac_reversed = data[14:26]
 
     # parse Govee Encoded data
+    if len(data[80:86]) != 6:
+        return None
+
     govee_encoded_data = int(data[80:86], 16)
 
     # parse battery percentage
+    if len(data[86:88]) != 2:
+        return None
+
     battery = int(data[86:88], 16)
 
     result = {
