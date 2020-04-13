@@ -1,10 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 0.4
+**Fixed:**
+
+ - **Correct two's complement conversion**
+ - **Initialize m_temp and m_hum to prevent UnboundLocalError error**
+
 ## 0.3
 **Fixed:**
 
- - **Prevent crashing on reading of corrupt broadcast ** 
+ - **Prevent crashing on reading of corrupt broadcast**
 
 ## 0.2
 

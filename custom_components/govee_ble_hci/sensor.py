@@ -74,6 +74,13 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 ###############################################################################
 
 
+def twos_complement(n, w=16):
+    """Two's complement integer conversion.  Adapted from: https://stackoverflow.com/a/33716541."""
+    if n & (1 << (w - 1)):
+        n = n - (1 << w)
+    return n
+
+
 #
 # Reverse MAC octet order
 #
@@ -119,11 +126,8 @@ def parse_raw_message_gvh5074(data):
 
     hum_int = int(hum_lsb, 16)
 
-    # Negative temperature stred in two's complement
-    if str(data[40:42]) == "FF":
-        temp_int = int(str(data[38:40]), 16) - 255
-    else:
-        temp_int = int(temp_lsb, 16)
+    # Negative temperature stored an two's complement
+    temp_int = twos_complement(int(temp_lsb, 16))
 
     # parse battery percentage
     battery = int(data[46:48], 16)
@@ -331,6 +335,8 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         lpacket = {}  # last packet number
         rssi = {}
         macs_names = {}  # map of macs to names given
+        m_hum = False
+        m_temp = False
 
         for conf_dev in config[CONF_GOVEE_DEVICES]:
             conf_dev = dict(conf_dev)

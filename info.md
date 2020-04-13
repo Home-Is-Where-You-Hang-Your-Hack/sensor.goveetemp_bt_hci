@@ -1,8 +1,10 @@
 {% if installed or pending_update %}
 
-#### Changes in 0.3
+## 0.4
+**Fixed:**
 
-* Prevent crashing on reading of corrupt broadcast
+ - **Correct two's complement conversion**
+ - **Initialize m_temp and m_hum to prevent UnboundLocalError error**
 
 {% endif %}
 
