@@ -3,6 +3,7 @@
 A custom component for [Home Assistant](https://www.home-assistant.io) that listens for the advertisement message broadcast by Govee Bluetooth Thermometer/Hygrometers.  This version uses [deprecated bluez hcitool/hcidump](https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit/?id=b1eb2c4cd057624312e0412f6c4be000f7fc3617) to scan.  This approach has its issues however [HASS](https://www.home-assistant.io/hassio) will required support to open the appropriate socket (AF_Bluetooth sockets on Alpine Linux using Python 3) before a better solution can be developed.
 
 ## Supported Devices
+* Govee H5072
 * [Govee H5074](https://www.amazon.com/Govee-Thermometer-Hygrometer-Bluetooth-Temperature/dp/B07R586J37)
 * [Govee H5075](https://www.amazon.com/Govee-Temperature-Humidity-Notification-Monitor/dp/B07Y36FWTT/)
 

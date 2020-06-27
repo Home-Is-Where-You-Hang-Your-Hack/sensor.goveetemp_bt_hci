@@ -155,7 +155,9 @@ def parse_raw_message_gvh5075(data):
 
     # check for Govee H5075 name prefix "GVH5075_"
     GVH5075_index = data.find("475648353037355F", 32)
-    if GVH5075_index == -1:
+    # check for Govee H5072 name prefix "GVH5072"
+    GVH5072_index = data.find("47564835303732", 32)
+    if GVH5072_index == -1 and GVH5075_index == -1:
         return None
 
     # check LE General Discoverable Mode and BR/EDR Not Supported
