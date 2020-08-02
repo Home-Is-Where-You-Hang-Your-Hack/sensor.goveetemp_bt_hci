@@ -1,9 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 0.6
+**Fix:**
+  - **Removed hcitool dependencies.**
+  - **Restructure component for easier maintenance.**
+
 ## 0.5
 **Feature:**
-  - **Added support for the Govee H5072** 
+  - **Added support for the Govee H5072**
 
 ## 0.4
 **Fixed:**

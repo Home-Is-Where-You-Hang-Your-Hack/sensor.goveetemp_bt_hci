@@ -1,25 +1,26 @@
 """Govee BLE monitor integration."""
 from datetime import timedelta
 import logging
-import os
-import statistics as sts
-import struct
-import subprocess
-import sys
-import tempfile
 import voluptuous as vol
+from typing import List
 
-from homeassistant.const import (
+from bleson import get_provider  # type: ignore
+from bleson.core.hci.constants import EVT_LE_ADVERTISING_REPORT  # type: ignore
+from bleson.core.types import BDAddress  # type: ignore
+from bleson.core.hci.type_converters import hex_string  # type: ignore
+
+from homeassistant.components.sensor import PLATFORM_SCHEMA  # type: ignore
+import homeassistant.helpers.config_validation as cv  # type: ignore
+from homeassistant.helpers.entity import Entity  # type: ignore
+from homeassistant.helpers.event import track_point_in_utc_time  # type: ignore
+import homeassistant.util.dt as dt_util  # type: ignore
+
+from homeassistant.const import (  # type: ignore
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_HUMIDITY,
     TEMP_CELSIUS,
     ATTR_BATTERY_LEVEL,
 )
-from homeassistant.components.sensor import PLATFORM_SCHEMA
-import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.event import track_point_in_utc_time
-import homeassistant.util.dt as dt_util
 
 from .const import (
     DEFAULT_ROUNDING,
@@ -36,14 +37,13 @@ from .const import (
     CONF_USE_MEDIAN,
     CONF_HCITOOL_ACTIVE,
     CONF_HCI_DEVICE,
-    CONF_TMIN,
-    CONF_TMAX,
-    CONF_HMIN,
-    CONF_HMAX,
     CONF_GOVEE_DEVICES,
     CONF_DEVICE_MAC,
     CONF_DEVICE_NAME,
 )
+
+from .govee_advertisement import GoveeAdvertisement
+from .ble_ht import BLE_HT_data
 
 ###############################################################################
 
@@ -74,442 +74,138 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 ###############################################################################
 
 
-def twos_complement(n, w=16):
-    """Two's complement integer conversion.  Adapted from: https://stackoverflow.com/a/33716541."""
-    if n & (1 << (w - 1)):
-        n = n - (1 << w)
-    return n
-
-
-#
-# Reverse MAC octet order
-#
-def reverse_mac(rmac):
-    """Change LE order to BE."""
-    if len(rmac) != 12:
-        return None
-
-    reversed_mac = rmac[10:12]
-    reversed_mac += rmac[8:10]
-    reversed_mac += rmac[6:8]
-    reversed_mac += rmac[4:6]
-    reversed_mac += rmac[2:4]
-    reversed_mac += rmac[0:2]
-    return reversed_mac
-
-
-#
-# Parse Govee H5074 message from hcitool
-#
-def parse_raw_message_gvh5074(data):
-    """Parse the raw data."""
-    # _LOGGER.debug(data)
-    if data is None:
-        return None
-
-    if not data.startswith("043E170201040") or "88EC" not in data:
-        return None
-
-    # check if RSSI is valid
-    (rssi,) = struct.unpack("<b", bytes.fromhex(data[-2:]))
-    if not 0 >= rssi >= -127:
-        return None
-
-    # check for MAC presence in message and in service data
-    device_mac_reversed = data[14:26]
-
-    temp_lsb = str(data[40:42]) + str(data[38:40])
-    hum_lsb = str(data[44:46]) + str(data[42:44])
-
-    # parse Govee Encoded data
-    govee_encoded_data = temp_lsb + hum_lsb
-
-    hum_int = int(hum_lsb, 16)
-
-    # Negative temperature stored an two's complement
-    temp_int = twos_complement(int(temp_lsb, 16))
-
-    # parse battery percentage
-    battery = int(data[46:48], 16)
-
-    result = {
-        "rssi": int(rssi),
-        "mac": reverse_mac(device_mac_reversed),
-        "temperature": float(temp_int / 100),
-        "humidity": float(hum_int / 100),
-        "battery": float(battery),
-        "packet": govee_encoded_data,
-    }
-
-    return result
-
-
-#
-# Parse Govee H5075 message from hcitool
-#
-def parse_raw_message_gvh5075(data):
-    """Parse the raw data."""
-    # _LOGGER.debug(data)
-    if data is None:
-        return None
-
-    # check for Govee H5075 name prefix "GVH5075_"
-    GVH5075_index = data.find("475648353037355F", 32)
-    # check for Govee H5072 name prefix "GVH5072"
-    GVH5072_index = data.find("47564835303732", 32)
-    if GVH5072_index == -1 and GVH5075_index == -1:
-        return None
-
-    # check LE General Discoverable Mode and BR/EDR Not Supported
-    adv_index = data.find("020105", 64, 71)
-    if adv_index == -1:
-        return None
-
-    # check if RSSI is valid
-    (rssi,) = struct.unpack("<b", bytes.fromhex(data[-2:]))
-    if not 0 >= rssi >= -127:
-        return None
-
-    # check for MAC presence in message and in service data
-    device_mac_reversed = data[14:26]
-
-    # parse Govee Encoded data
-    if len(data[80:86]) != 6:
-        return None
-
-    govee_encoded_data = int(data[80:86], 16)
-
-    # parse battery percentage
-    if len(data[86:88]) != 2:
-        return None
-
-    battery = int(data[86:88], 16)
-
-    result = {
-        "rssi": int(rssi),
-        "mac": reverse_mac(device_mac_reversed),
-        "temperature": float(govee_encoded_data / 10000),
-        "humidity": float((govee_encoded_data % 1000) / 10),
-        "battery": float(battery),
-        "packet": govee_encoded_data,
-    }
-
-    return result
-
-
-#
-# BLEScanner class
-#
-class BLEScanner:
-    """BLE scanner."""
-
-    hcitool = None
-    hcidump = None
-    tempf = tempfile.TemporaryFile(mode="w+b")
-    devnull = (
-        subprocess.DEVNULL
-        if sys.version_info > (3, 0)
-        else open(os.devnull, "wb")  # noqa
-    )
-
-    #
-    # Start scanning with hcitool and hcidump
-    #
-    def start(self, config):
-        """Start receiving broadcasts."""
-        _LOGGER.debug("Start receiving broadcasts")
-
-        _LOGGER.debug(config[CONF_GOVEE_DEVICES])
-
-        hci_device = config[CONF_HCI_DEVICE]
-
-        # is hcitool in active or passive mode
-        hcitool_active = config[CONF_HCITOOL_ACTIVE]
-
-        hcitoolcmd = ["hcitool", "-i", hci_device, "lescan", "--duplicates"]
-
-        if not hcitool_active:
-            hcitoolcmd.append("--passive")
-
-        # hcitool subprecess
-        self.hcitool = subprocess.Popen(
-            hcitoolcmd, stdout=self.devnull, stderr=self.devnull
-        )
-
-        # hcidump subprecess
-        self.hcidump = subprocess.Popen(
-            ["hcidump", "-i", hci_device, "--raw", "hci"],
-            stdout=self.tempf,
-            stderr=self.devnull,
-        )
-
-    #
-    # Stop scanning
-    #
-    def stop(self):
-        """Stop receiving broadcasts."""
-        _LOGGER.debug("Stop receiving broadcasts")
-        self.hcidump.terminate()
-        self.hcidump.communicate()
-        self.hcitool.terminate()
-        self.hcitool.communicate()
-
-    #
-    # Prcocess clean up
-    #
-    def shutdown_handler(self, event):
-        """Run homeassistant_stop event handler."""
-        _LOGGER.debug("Running homeassistant_stop event handler: %s", event)
-        self.hcidump.kill()
-        self.hcidump.communicate()
-        self.hcitool.kill()
-        self.hcitool.communicate()
-        self.tempf.close()
-
-    #
-    # Process message
-    #
-    def messages(self):
-        """Get data from hcidump."""
-        data = ""
-        try:
-            _LOGGER.debug("reading hcidump...")
-            self.tempf.flush()
-            self.tempf.seek(0)
-
-            # read lines from STDOUT
-            for line in self.tempf:
-                try:
-                    sline = line.decode()
-                except AttributeError:
-                    _LOGGER.debug("Error decoding line: %s", line)
-                if sline.startswith("> "):
-                    yield data
-                    data = sline[2:].strip().replace(" ", "")
-                elif sline.startswith("< "):
-                    yield data
-                    data = ""
-                else:
-                    data += sline.strip().replace(" ", "")
-        except RuntimeError as error:
-            _LOGGER.error("Error during reading of hcidump: %s", error)
-            data = ""
-
-        # reset STDOUT
-        self.tempf.seek(0)
-        self.tempf.truncate(0)
-        yield data
-
-
 #
 # Configure for Home Assistant
 #
-def setup_platform(hass, config, add_entities, discovery_info=None):
+def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
     """Set up the sensor platform."""
-    _LOGGER.debug("Starting")
-    scanner = BLEScanner()
-    hass.bus.listen("homeassistant_stop", scanner.shutdown_handler)
-    scanner.start(config)
+    _LOGGER.debug("Starting Govee HCI Sensor")
 
-    sensors_by_mac = {}
+    govee_devices: List[BLE_HT_data] = []  # Data objects of configured devices
+    sensors_by_mac = {}  # HomeAssistant sensors by MAC address
 
-    ATTR = "_device_state_attributes"
-    div_zero_hum_msg = "Division by zero while humidity averaging!"
+    def handle_meta_event(hci_packet) -> None:
+        """Handle recieved BLE data."""
+        # If recieved BLE packet is of type ADVERTISING_REPORT
+        if hci_packet.subevent_code == EVT_LE_ADVERTISING_REPORT:
+            packet_mac = hci_packet.data[3:9]
 
-    #
-    # Discover Bluetooth LE devices.
-    #
-    def discover_ble_devices(config):
+            for device in govee_devices:
+                # If recieved device data matches a configured govee device
+                if BDAddress(device.mac) == BDAddress(packet_mac):
+                    _LOGGER.debug(
+                        "Received packet data for {}: {}".format(
+                            BDAddress(device.mac), hex_string(hci_packet.data)
+                        )
+                    )
+                    # parse packet data
+                    ga = GoveeAdvertisement(hci_packet.data)
+
+                    # If mfg data information is defined, update values
+                    if ga.packet is not None:
+                        device.update(ga.temperature, ga.humidity, ga.packet)
+
+                    # Update RSSI and battery level
+                    device.rssi = ga.rssi
+                    device.battery = ga.battery
+
+    def init_configureed_devices() -> None:
+        """Initialize configured Govee devices."""
+        for conf_dev in config[CONF_GOVEE_DEVICES]:
+            # Initialize BLE HT data objects
+            mac = conf_dev["mac"]
+            device = BLE_HT_data(mac, conf_dev.get("name", None))
+            device.log_spikes = config[CONF_LOG_SPIKES]
+            if config[CONF_ROUNDING]:
+                device.decimal_places = config[CONF_DECIMALS]
+            govee_devices.append(device)
+
+            # Initialize HA sensors
+            name = conf_dev.get("name", mac)
+            temp_sensor = TemperatureSensor(mac, name)
+            hum_sensor = HumiditySensor(mac, name)
+            sensors = [temp_sensor, hum_sensor]
+            sensors_by_mac[mac] = sensors
+            add_entities(sensors)
+
+    def update_ble_devices(config) -> None:
         """Discover Bluetooth LE devices."""
-        _LOGGER.debug("Discovering Bluetooth LE devices")
-        rounding = config[CONF_ROUNDING]
-        decimals = config[CONF_DECIMALS]
-        log_spikes = config[CONF_LOG_SPIKES]
+        # _LOGGER.debug("Discovering Bluetooth LE devices")
         use_median = config[CONF_USE_MEDIAN]
 
-        _LOGGER.debug("Stopping")
-        scanner.stop()
+        ATTR = "_device_state_attributes"
+        textattr = "last median of" if use_median else "last mean of"
 
-        _LOGGER.debug("Analyzing")
-        hum_m_data = {}
-        temp_m_data = {}
-        batt = {}  # battery
-        lpacket = {}  # last packet number
-        rssi = {}
-        macs_names = {}  # map of macs to names given
-        m_hum = False
-        m_temp = False
+        for device in govee_devices:
+            sensors = sensors_by_mac[device.mac]
 
-        for conf_dev in config[CONF_GOVEE_DEVICES]:
-            conf_dev = dict(conf_dev)
-            mac = conf_dev["mac"].translate({ord(i): None for i in ":"})
-            macs_names[mac] = conf_dev.get("name", mac)
+            _LOGGER.debug(
+                "Last mfg data for {}: {}".format(
+                    BDAddress(device.mac), device.last_packet
+                )
+            )
 
-        _LOGGER.debug(macs_names)
-        for msg in scanner.messages():
-            data = parse_raw_message_gvh5075(msg)
+            if device.last_packet:
+                humstate_med = float(device.median_humidity)
+                humstate_mean = float(device.mean_humidity)
+                tempstate_med = float(device.median_temperature)
+                tempstate_mean = float(device.mean_temperature)
 
-            if not data:
-                data = parse_raw_message_gvh5074(msg)
-
-            # check for mac and temperature
-            # assume humidity, batter and rssi are included
-            if data and "mac" in data and data["mac"] in macs_names.keys():
-                # Device MAC address
-                mac = data["mac"]
-                # Given name
-                name = macs_names[mac]
-                # Temperature in Celsius
-                temp = data["temperature"]
-                # humidity %
-                humidity = data["humidity"]
-
-                # ignore duplicated message
-                packet = data["packet"]
-
-                if mac in lpacket:
-                    prev_packet = lpacket[mac]
-                else:
-                    prev_packet = None
-                if prev_packet == packet:
-                    _LOGGER.debug("DUPLICATE: %s, IGNORING!", data)
-                else:
-                    _LOGGER.debug("NEW DATA: %s", data)
-                    lpacket[mac] = packet
-
-                # Check if temperature within bounds
-                if CONF_TMAX >= temp >= CONF_TMIN:
-                    if mac not in temp_m_data:
-                        temp_m_data[mac] = []
-                    temp_m_data[mac].append(temp)
-                    m_temp = temp_m_data[mac]
-                elif log_spikes:
-                    _LOGGER.error("Temperature spike: %s (%s)", temp, mac)
-
-                # Check if humidity within bounds
-                if CONF_HMAX >= humidity >= CONF_HMIN:
-                    if mac not in hum_m_data:
-                        hum_m_data[mac] = []
-                    hum_m_data[mac].append(humidity)
-                    m_hum = hum_m_data[mac]
-                elif log_spikes:
-                    _LOGGER.error("Humidity spike: %s (%s)", humidity, mac)
-
-                # Battery percentage
-                batt[mac] = int(data["battery"])
-
-                # RSSI
-                if mac not in rssi:
-                    rssi[mac] = []
-                rssi[mac].append(data["rssi"])
-
-                # update home assistat
-                if mac in sensors_by_mac:
-                    sensors = sensors_by_mac[mac]
-                else:
-                    temp_sensor = TemperatureSensor(mac, name)
-                    hum_sensor = HumiditySensor(mac, name)
-                    sensors = [temp_sensor, hum_sensor]
-                    sensors_by_mac[mac] = sensors
-                    add_entities(sensors)
-
-                for sensor in sensors:
-                    getattr(sensor, ATTR)["last packet id"] = packet
-                    getattr(sensor, ATTR)["rssi"] = round(sts.mean(rssi[mac]))
-                    getattr(sensor, ATTR)[ATTR_BATTERY_LEVEL] = batt[mac]
-
-                # averaging and states updating
-                tempstate_mean = None
-                humstate_mean = None
-                tempstate_med = None
-                humstate_med = None
+                getattr(sensors[0], ATTR)["median"] = tempstate_med
+                getattr(sensors[0], ATTR)["mean"] = tempstate_mean
                 if use_median:
-                    textattr = "last median of"
+                    setattr(sensors[0], "_state", tempstate_med)
                 else:
-                    textattr = "last mean of"
+                    setattr(sensors[0], "_state", tempstate_mean)
 
-                if m_temp:
-                    try:
-                        if rounding:
-                            tempstate_med = round(sts.median(m_temp), decimals)  # noqa
-                            tempstate_mean = round(sts.mean(m_temp), decimals)  # noqa
-                        else:
-                            tempstate_med = sts.median(m_temp)
-                            tempstate_mean = sts.mean(m_temp)
+                getattr(sensors[1], ATTR)["median"] = humstate_med
+                getattr(sensors[1], ATTR)["mean"] = humstate_mean
 
-                        if use_median:
-                            setattr(sensors[0], "_state", tempstate_med)
-                        else:
-                            setattr(sensors[0], "_state", tempstate_mean)
+                if use_median:
+                    setattr(sensors[1], "_state", humstate_med)
+                else:
+                    setattr(sensors[1], "_state", humstate_mean)
 
-                        getattr(sensors[0], ATTR)[textattr] = len(m_temp)
-                        getattr(sensors[0], ATTR)["median"] = tempstate_med
-                        getattr(sensors[0], ATTR)["mean"] = tempstate_mean
-                    except AttributeError:
-                        _LOGGER.info("Sensor %s not yet ready for update", mac)
-                    except ZeroDivisionError:
-                        _LOGGER.error(
-                            "Division by zero while temperature averaging!"
-                        )  # noqa
-                        continue
-                    except IndexError as error:
-                        _LOGGER.error("%s. Index is 0!", error)
-                        _LOGGER.error("sensors list size: %i", len(sensors))
-
-                if m_hum:
-                    try:
-                        if rounding:
-                            humstate_med = round(sts.median(m_hum), decimals)
-                            humstate_mean = round(sts.mean(m_hum), decimals)
-                        else:
-                            humstate_med = sts.median(m_hum)
-                            humstate_mean = sts.mean(m_hum)
-
-                        if use_median:
-                            setattr(sensors[1], "_state", humstate_med)
-                        else:
-                            setattr(sensors[1], "_state", humstate_mean)
-
-                        getattr(sensors[1], ATTR)[textattr] = len(m_hum)
-                        getattr(sensors[1], ATTR)["median"] = humstate_med
-                        getattr(sensors[1], ATTR)["mean"] = humstate_mean
-                    except AttributeError:
-                        _LOGGER.info("Sensor %s not yet ready for update", mac)
-                    except ZeroDivisionError:
-                        _LOGGER.error(div_zero_hum_msg)
-                        continue
-                    except IndexError as error:
-                        _LOGGER.error("%s. Index is 1!", error)
-                        _LOGGER.error("sensors list size: %i", len(sensors))
-
-        for mac, sensors in sensors_by_mac.items():
-            if sensors and len(sensors) == 2:
-                _LOGGER.debug("updating sensor %s", mac)
                 for sensor in sensors:
+                    last_packet = device.last_packet
+                    getattr(sensor, ATTR)["last packet id"] = last_packet
+                    getattr(sensor, ATTR)["rssi"] = device.rssi
+                    getattr(sensor, ATTR)[ATTR_BATTERY_LEVEL] = device.battery
+                    getattr(sensor, ATTR)[textattr] = device.data_size
                     sensor.async_schedule_update_ha_state()
 
-        scanner.start(config)
-        return []
+                device.reset()
 
-    #
-    # Update BLE
-    #
-    def update_ble(now):
+    def update_ble_loop(now) -> None:
         """Lookup Bluetooth LE devices and update status."""
-        period = config[CONF_PERIOD]
-        _LOGGER.debug("update_ble called")
+        _LOGGER.debug("update_ble_loop called")
 
         try:
-            discover_ble_devices(config)
+            # Time to make the dounuts
+            update_ble_devices(config)
         except RuntimeError as error:
             _LOGGER.error("Error during Bluetooth LE scan: %s", error)
 
-        track_point_in_utc_time(
-            hass, update_ble, dt_util.utcnow() + timedelta(seconds=period)
-        )
+        time_offset = dt_util.utcnow() + timedelta(seconds=config[CONF_PERIOD])
+        # update_ble_loop() will be called again after time_offset
+        track_point_in_utc_time(hass, update_ble_loop, time_offset)
 
-    update_ble(dt_util.utcnow())
+    ###########################################################################
 
+    # Initalize bluetooth adapter and begin scanning
+    # XXX: will not work if there are more than 10 HCI devices
+    adapter = get_provider().get_adapter(int(config[CONF_HCI_DEVICE][-1]))
+    adapter._handle_meta_event = handle_meta_event
+    hass.bus.listen("homeassistant_stop", adapter.stop_scanning)
+    adapter.start_scanning()
+
+    # Initialize configured Govee devices
+    init_configureed_devices()
+    # Begin sensor update loop
+    update_ble_loop(dt_util.utcnow())
+
+
+###############################################################################
 
 #
 # HomeAssistant Temperature Sensor Class
@@ -517,16 +213,16 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 class TemperatureSensor(Entity):
     """Representation of a sensor."""
 
-    def __init__(self, mac, name):
+    def __init__(self, mac: str, name: str):
         """Initialize the sensor."""
         self._state = None
         self._battery = None
-        self._unique_id = "t_" + mac
+        self._unique_id = "t_" + mac.replace(":", "")
         self._name = name
         self._device_state_attributes = {}
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the sensor."""
         return "{} temp".format(self._name)
 
@@ -536,7 +232,7 @@ class TemperatureSensor(Entity):
         return self._state
 
     @property
-    def unit_of_measurement(self):
+    def unit_of_measurement(self) -> str:
         """Return the unit of measurement."""
         return TEMP_CELSIUS
 
@@ -546,7 +242,7 @@ class TemperatureSensor(Entity):
         return DEVICE_CLASS_TEMPERATURE
 
     @property
-    def should_poll(self):
+    def should_poll(self) -> bool:
         """No polling needed."""
         return False
 
@@ -561,7 +257,7 @@ class TemperatureSensor(Entity):
         return self._unique_id
 
     @property
-    def force_update(self):
+    def force_update(self) -> bool:
         """Force update."""
         return True
 
@@ -572,16 +268,16 @@ class TemperatureSensor(Entity):
 class HumiditySensor(Entity):
     """Representation of a Sensor."""
 
-    def __init__(self, mac, name):
+    def __init__(self, mac: str, name: str):
         """Initialize the sensor."""
         self._state = None
         self._battery = None
         self._name = name
-        self._unique_id = "h_" + mac
+        self._unique_id = "h_" + mac.replace(":", "")
         self._device_state_attributes = {}
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the sensor."""
         return "{} humidity".format(self._name)
 
@@ -591,7 +287,7 @@ class HumiditySensor(Entity):
         return self._state
 
     @property
-    def unit_of_measurement(self):
+    def unit_of_measurement(self) -> str:
         """Return the unit of measurement."""
         return "%"
 
@@ -601,7 +297,7 @@ class HumiditySensor(Entity):
         return DEVICE_CLASS_HUMIDITY
 
     @property
-    def should_poll(self):
+    def should_poll(self) -> bool:
         """No polling needed."""
         return False
 
@@ -611,11 +307,11 @@ class HumiditySensor(Entity):
         return self._device_state_attributes
 
     @property
-    def unique_id(self) -> str:
+    def unique_id(self):
         """Return a unique ID."""
         return self._unique_id
 
     @property
-    def force_update(self):
+    def force_update(self) -> bool:
         """Force update."""
         return True
