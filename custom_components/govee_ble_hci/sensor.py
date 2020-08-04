@@ -28,7 +28,6 @@ from .const import (
     DEFAULT_PERIOD,
     DEFAULT_LOG_SPIKES,
     DEFAULT_USE_MEDIAN,
-    DEFAULT_HCITOOL_ACTIVE,
     DEFAULT_HCI_DEVICE,
     CONF_ROUNDING,
     CONF_DECIMALS,
@@ -63,9 +62,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_PERIOD, default=DEFAULT_PERIOD): cv.positive_int,
         vol.Optional(CONF_LOG_SPIKES, default=DEFAULT_LOG_SPIKES): cv.boolean,
         vol.Optional(CONF_USE_MEDIAN, default=DEFAULT_USE_MEDIAN): cv.boolean,
-        vol.Optional(
-            CONF_HCITOOL_ACTIVE, default=DEFAULT_HCITOOL_ACTIVE
-        ): cv.boolean,  # noqa
+        vol.Optional(CONF_HCITOOL_ACTIVE): cv.boolean,  # noqa
         vol.Optional(CONF_GOVEE_DEVICES): vol.All([DEVICES_SCHEMA]),
         vol.Optional(CONF_HCI_DEVICE, default=DEFAULT_HCI_DEVICE): cv.string,
     }
@@ -80,6 +77,12 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
     """Set up the sensor platform."""
     _LOGGER.debug("Starting Govee HCI Sensor")
+
+    if hasattr(config, "CONF_HCITOOL_ACTIVE"):
+        _LOGGER.warning(
+            "CONF_HCITOOL_ACTIVE has been deprecated "
+            "and will be removed in a future release."
+        )
 
     govee_devices: List[BLE_HT_data] = []  # Data objects of configured devices
     sensors_by_mac = {}  # HomeAssistant sensors by MAC address
