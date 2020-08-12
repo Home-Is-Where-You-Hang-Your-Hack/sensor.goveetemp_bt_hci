@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 **Fix:**
   - **Removed hcitool dependencies.**
   - **Restructure component for easier maintenance.**
+  - **Deprecated `hcitool_active` configuration option.**
 
 ## 0.5
 **Feature:**

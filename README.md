@@ -27,6 +27,8 @@ A custom component for [Home Assistant](https://www.home-assistant.io) that list
 
 - A second restart may be required to load the configuration. Within a few minutes, the sensors should be added to your home-assistant automatically (at least one [period](#period) required).
 
+**5. If the entities are still not displaying data, a restart of the host device may be required.**
+
 
 ### Configuration Variables
 
@@ -50,7 +52,7 @@ sensor:
 | Option | Type |Default Value | Description |  
 | -- | -- | -- | -- |
 | `rounding`| Boolean | `True` | Enable/disable rounding of the average of all measurements taken within the number seconds specified with 'period'. |  
-| `decimals` | positive integer | `2`| Number of decimal places to round if rounding is enabled. |
+| `decimals` | positive integer | `2`| Number of decimal places to round if rounding is enabled. NOTE: the raw Celsius is rounded and setting `decimals: 0` will still result in decimal values returned for Fahrenheit as well as temperatures being off by up to 1 degree `F`.|
 | `period` | positive integer | `60` | The period in seconds during which the sensor readings are collected and transmitted to Home Assistant after averaging. The Govee devices broadcast roughly once per second so this limits amount of mostly duplicate data stored in  Home Assistant's database. |
 | `log_spikes` |  Boolean | `False` | Puts information about each erroneous spike in the Home Assistant log. |
 | `use_median` | Boolean  | `False` | Use median as sensor output instead of mean (helps with "spiky" sensors). Please note that both the median and the mean values in any case are present as the sensor state attributes. |
