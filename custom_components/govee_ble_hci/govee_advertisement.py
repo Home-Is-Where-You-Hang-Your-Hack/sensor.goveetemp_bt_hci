@@ -107,16 +107,17 @@ class GoveeAdvertisement:
                 # Negative temperature stored an two's complement
                 temp_lsb_int = int(temp_lsb, 16)
                 self.temperature = float(twos_complement(temp_lsb_int) / 100)
-                self.battery = int(self.mfg_data[7])
+                if len(self.mfg_data) == 9:
+                    self.battery = int(self.mfg_data[7])
         except (ValueError, IndexError):
             pass
 
     def check_is_gvh5074(self) -> bool:
-        """Check if mfg data is that of Govee H5074, 5072 or the new 5102"""
-        return self._mfg_data_check(9, 6)
+        """Check if mfg data is that of Govee H5074 or generic Govee"""
+        return self._mfg_data_check(9, 6) or self._mfg_data_check(11, 6)
 
     def check_is_gvh5075_gvh5072(self) -> bool:
-        """Check if mfg data is that of Govee H5075 or H5072."""
+        """Check if mfg data is that of Govee H5075, H5072 or the new 5102"""
         return self._mfg_data_check(8, 5)
 
     def _mfg_data_check(self, data_length: int, flags: int) -> bool:
