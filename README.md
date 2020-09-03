@@ -17,6 +17,12 @@ A custom component for [Home Assistant](https://www.home-assistant.io) that list
 - Alternatively, you can install it manually. Just copy paste the content of the `sensor.goveetemp_bt_hci/custom_components` folder in your `config/custom_components` directory.
      As example, you will get the `sensor.py` file in the following path: `/config/custom_components/govee_ble_hci/sensor.py`.
 
+- If running Home Assistant without root access the [Bleson](https://github.com/TheCellule/python-bleson) Python library used for accessing bluetooth requires the following permissions applied to the Python 3 binary. If using a virtual environment for HA, this binary will be in the virtual environment path.
+
+     *NOTE*: Replace "path" with the path to the Python3 binary (example: /srv/homeassistant/bin/python3)
+     ```
+     sudo setcap cap_net_raw,cap_net_admin+eip $(eval readlink -f path)
+     ```
 **2. Stop and start Home Assistant:**
 
 - Stop and start Home Assistant. Make sure you first stop Home Assistant and then start Home Assistant again.  Do this before step 5, as Home Assistant will otherwise complain that your configuration is not ok (as it still uses the build in `govee_ble_hci` integration), and won't restart when hitting restart in the server management menu.
