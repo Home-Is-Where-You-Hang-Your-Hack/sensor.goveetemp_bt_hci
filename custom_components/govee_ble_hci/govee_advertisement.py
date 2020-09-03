@@ -89,11 +89,15 @@ class GoveeAdvertisement:
                 pos += length + 1
 
             if self.check_is_gvh5075_gvh5072():
-                mfg_data_5075 = hex_string(self.mfg_data[3:6]).replace(" ", "")
+                if self.mfg_data[0:3]==b'\x01\x00\x01':
+                    mfg_data_5075 = hex_string(self.mfg_data[4:7]).replace(" ", "")
+                    self.battery = int(self.mfg_data[7])
+                else:
+                    mfg_data_5075 = hex_string(self.mfg_data[3:6]).replace(" ", "")
+                    self.battery = int(self.mfg_data[6])
                 self.packet = int(mfg_data_5075, 16)
                 self.temperature = float(self.packet / 10000)
                 self.humidity = float((self.packet % 1000) / 10)
-                self.battery = int(self.mfg_data[6])
             elif self.check_is_gvh5074():
                 mfg_data_5074 = hex_string(self.mfg_data[3:7]).replace(" ", "")
                 temp_lsb = mfg_data_5074[2:4] + mfg_data_5074[0:2]
@@ -108,7 +112,7 @@ class GoveeAdvertisement:
             pass
 
     def check_is_gvh5074(self) -> bool:
-        """Check if mfg data is that of Govee H5074."""
+        """Check if mfg data is that of Govee H5074, 5072 or the new 5102"""
         return self._mfg_data_check(9, 6)
 
     def check_is_gvh5075_gvh5072(self) -> bool:
