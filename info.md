@@ -1,10 +1,11 @@
 {% if installed or pending_update %}
 
-## 0.6
+## 0.7
 **Fix:**
-  - **Removed hcitool dependencies.**
-  - **Restructure component for easier maintenance.**
-  - **Deprecated `hcitool_active` configuration option.**
+  - **Restart scanning each period to prevent device sleeping** (Thank you[billprozac](https://github.com/billprozac))
+
+**Docs:**
+  - **Added non-root user note** (Thank you[spinningmonkey](https://github.com/spinningmonkey))
 
 **NOTE** FOR THOSE WHO ARE UPGRADING FROM V0.5 - a restart of the host device is suggested after upgrading this component.  The previous implementation may still have processes running or sockets open which.could cause unforeseeable issues.  I apologize for the inconvenience and future updates should go much smoother.  
 
