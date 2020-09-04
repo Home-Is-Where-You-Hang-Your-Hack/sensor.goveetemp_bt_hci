@@ -102,7 +102,9 @@ class BLE_HT_data:
     @property
     def rssi(self) -> Optional[int]:
         """Return RSSI value."""
-        return round(sts.mean(self._rssi)) if len(self._rssi) > 0 else None
+        if len(self._rssi) > 0:
+            return round(sts.mean(self._rssi))
+        return None
 
     @rssi.setter
     def rssi(self, value: Optional[int]) -> None:
