@@ -113,6 +113,7 @@ class GoveeAdvertisement:
                 # Negative temperature stored an two's complement
                 temp_lsb_int = int(temp_lsb, 16)
                 self.temperature = float(twos_complement(temp_lsb_int) / 100)
+                self.battery = int(self.mfg_data[7])
         except (ValueError, IndexError):
             pass
 
