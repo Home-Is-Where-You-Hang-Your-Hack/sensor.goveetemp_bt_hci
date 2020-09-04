@@ -124,7 +124,7 @@ class GoveeAdvertisement:
     def check_is_gvh5075_gvh5072(self) -> bool:
         """Check if mfg data is that of Govee H5075 or H5072."""
         return self._mfg_data_check(8, 5)
-    
+
     def check_is_gvh5051(self) -> bool:
         """Check if mfg data is that of Govee H5051."""
         return self._mfg_data_check(11, 6)
