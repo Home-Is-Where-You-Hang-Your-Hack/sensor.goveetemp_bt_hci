@@ -1,6 +1,9 @@
 {% if installed or pending_update %}
 
 ## 0.7
+**Feature:**
+  - **Added support for the Govee H5051** (Thank you[billprozac](https://github.com/billprozac))
+
 **Fix:**
   - **Restart scanning each period to prevent device sleeping** (Thank you[billprozac](https://github.com/billprozac))
 

@@ -3,6 +3,7 @@
 A custom component for [Home Assistant](https://www.home-assistant.io) that listens for the advertisement message broadcast by Govee Bluetooth Thermometer/Hygrometers.
 
 ## Supported Devices
+* Govee H5051 (BLE only)
 * Govee H5072
 * [Govee H5074](https://www.amazon.com/Govee-Thermometer-Hygrometer-Bluetooth-Temperature/dp/B07R586J37)
 * [Govee H5075](https://www.amazon.com/Govee-Temperature-Humidity-Notification-Monitor/dp/B07Y36FWTT/)
