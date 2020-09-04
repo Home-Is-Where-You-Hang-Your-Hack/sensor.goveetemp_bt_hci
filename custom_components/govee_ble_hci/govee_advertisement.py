@@ -104,6 +104,16 @@ class GoveeAdvertisement:
                 temp_lsb_int = int(temp_lsb, 16)
                 self.temperature = float(twos_complement(temp_lsb_int) / 100)
                 self.battery = int(self.mfg_data[7])
+            elif self.check_is_gvh5051():
+                mfg_data_5074 = hex_string(self.mfg_data[3:7]).replace(" ", "")
+                temp_lsb = mfg_data_5074[2:4] + mfg_data_5074[0:2]
+                hum_lsb = mfg_data_5074[6:8] + mfg_data_5074[4:6]
+                self.packet = temp_lsb + hum_lsb
+                self.humidity = float(int(hum_lsb, 16) / 100)
+                # Negative temperature stored an two's complement
+                temp_lsb_int = int(temp_lsb, 16)
+                self.temperature = float(twos_complement(temp_lsb_int) / 100)
+                self.battery = int(self.mfg_data[7])
         except (ValueError, IndexError):
             pass
 
@@ -114,6 +124,10 @@ class GoveeAdvertisement:
     def check_is_gvh5075_gvh5072(self) -> bool:
         """Check if mfg data is that of Govee H5075 or H5072."""
         return self._mfg_data_check(8, 5)
+    
+    def check_is_gvh5051(self) -> bool:
+        """Check if mfg data is that of Govee H5051."""
+        return self._mfg_data_check(11, 6)
 
     def _mfg_data_check(self, data_length: int, flags: int) -> bool:
         """Check if mfg data is of a certain length with the correct flag."""
