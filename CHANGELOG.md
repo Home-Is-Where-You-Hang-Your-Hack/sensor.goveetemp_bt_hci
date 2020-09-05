@@ -3,13 +3,14 @@ All notable changes to this project will be documented in this file.
 
 ## 0.7
 **Feature:**
-  - **Added support for the Govee H5051** (Thank you[billprozac](https://github.com/billprozac))
+  - **Added support for the Govee H5051** (Thank you [billprozac](https://github.com/billprozac))
+  - **Added support for the Govee H5102** (Thank you [billprozac](https://github.com/billprozac))
 
 **Fix:**
-  - **Restart scanning each period to prevent device sleeping** (Thank you[billprozac](https://github.com/billprozac))
+  - **Restart scanning each period to prevent device sleeping** (Thank you [billprozac](https://github.com/billprozac))
 
 **Docs:**
-  - **Added non-root user note** (Thank you[spinningmonkey](https://github.com/spinningmonkey))
+  - **Added non-root user note** (Thank you [spinningmonkey](https://github.com/spinningmonkey))
 
 ## 0.6
 **Fix:**

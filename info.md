@@ -2,13 +2,14 @@
 
 ## 0.7
 **Feature:**
-  - **Added support for the Govee H5051** (Thank you[billprozac](https://github.com/billprozac))
+  - **Added support for the Govee H5051** (Thank you [billprozac](https://github.com/billprozac))
+  - **Added support for the Govee H5102** (Thank you [billprozac](https://github.com/billprozac))
 
 **Fix:**
-  - **Restart scanning each period to prevent device sleeping** (Thank you[billprozac](https://github.com/billprozac))
+  - **Restart scanning each period to prevent device sleeping** (Thank you [billprozac](https://github.com/billprozac))
 
 **Docs:**
-  - **Added non-root user note** (Thank you[spinningmonkey](https://github.com/spinningmonkey))
+  - **Added non-root user note** (Thank you [spinningmonkey](https://github.com/spinningmonkey))
 
 **NOTE** FOR THOSE WHO ARE UPGRADING FROM V0.5 - a restart of the host device is suggested after upgrading this component.  The previous implementation may still have processes running or sockets open which.could cause unforeseeable issues.  I apologize for the inconvenience and future updates should go much smoother.  
 
@@ -22,9 +23,11 @@
 A custom component for [Home Assistant](https://www.home-assistant.io) that listens for the advertisement message broadcast by Govee Bluetooth Thermometer/Hygrometers.
 
 ## Supported Devices
+* Govee H5051 (BLE only)
 * Govee H5072
 * [Govee H5074](https://www.amazon.com/Govee-Thermometer-Hygrometer-Bluetooth-Temperature/dp/B07R586J37)
 * [Govee H5075](https://www.amazon.com/Govee-Temperature-Humidity-Notification-Monitor/dp/B07Y36FWTT/)
+* [Govee H5102](https://www.amazon.com/gp/product/B087313N8F/)
 
 ## Installation
 
