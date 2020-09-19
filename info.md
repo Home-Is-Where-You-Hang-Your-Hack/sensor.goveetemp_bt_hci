@@ -1,15 +1,8 @@
 {% if installed or pending_update %}
 
-## 0.7
-**Feature:**
-  - **Added support for the Govee H5051** (Thank you [billprozac](https://github.com/billprozac))
-  - **Added support for the Govee H5102** (Thank you [billprozac](https://github.com/billprozac))
-
+## 0.7.1
 **Fix:**
-  - **Restart scanning each period to prevent device sleeping** (Thank you [billprozac](https://github.com/billprozac))
-
-**Docs:**
-  - **Added non-root user note** (Thank you [spinningmonkey](https://github.com/spinningmonkey))
+  - **Update bleson package, fixes constant RSSI value**
 
 **NOTE** FOR THOSE WHO ARE UPGRADING FROM V0.5 - a restart of the host device is suggested after upgrading this component.  The previous implementation may still have processes running or sockets open which.could cause unforeseeable issues.  I apologize for the inconvenience and future updates should go much smoother.  
 

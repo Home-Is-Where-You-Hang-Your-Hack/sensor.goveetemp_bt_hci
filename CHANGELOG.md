@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 0.7.1
+**Fix:**
+  - **Update bleson package, fixes constant RSSI value**
+
 ## 0.7
 **Feature:**
   - **Added support for the Govee H5051** (Thank you [billprozac](https://github.com/billprozac))
