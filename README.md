@@ -7,6 +7,7 @@ A custom component for [Home Assistant](https://www.home-assistant.io) that list
 * Govee H5072
 * [Govee H5074](https://www.amazon.com/Govee-Thermometer-Hygrometer-Bluetooth-Temperature/dp/B07R586J37)
 * [Govee H5075](https://www.amazon.com/Govee-Temperature-Humidity-Notification-Monitor/dp/B07Y36FWTT/)
+* Govee H5101
 * [Govee H5102](https://www.amazon.com/gp/product/B087313N8F/)
 
 ## Installation
@@ -18,6 +19,8 @@ A custom component for [Home Assistant](https://www.home-assistant.io) that list
 
 - Alternatively, you can install it manually. Just copy paste the content of the `sensor.goveetemp_bt_hci/custom_components` folder in your `config/custom_components` directory.
      As example, you will get the `sensor.py` file in the following path: `/config/custom_components/govee_ble_hci/sensor.py`.
+
+*NOTE:* the following instructions about setting device permissions are an edge case for a very specific set up.  (If you do not understand it, do not worry about).
 
 - If running Home Assistant without root access the [Bleson](https://github.com/TheCellule/python-bleson) Python library used for accessing bluetooth requires the following permissions applied to the Python 3 binary. If using a virtual environment for HA, this binary will be in the virtual environment path.
 
@@ -33,10 +36,13 @@ A custom component for [Home Assistant](https://www.home-assistant.io) that list
 
 **4. Restart Home Assistant:**
 
-- A second restart may be required to load the configuration. Within a few minutes, the sensors should be added to your home-assistant automatically (at least one [period](#period) required).
+- A second restart may be required to load the configuration. Within a few minutes, the sensors should be added to your home-assistant automatically (at least two [period](#period) may be required.  If the [period](#period) is set to a time greater than two minutes, at least four [period](#period) may be required).
 
 **5. If the entities are still not displaying data, a restart of the host device may be required.**
 
+### Troubleshooting and help
+
+Any questions or support should be asked on [this component's Home Assistant community post](https://community.home-assistant.io/t/govee-ble-thermometer-hygrometer-sensor/166696).
 
 ### Configuration Variables
 
