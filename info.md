@@ -1,8 +1,8 @@
 {% if installed or pending_update %}
 
-## 0.7.1
+## 0.8.0
 **Fix:**
-  - **Update bleson package, fixes constant RSSI value**
+  - **Decode negative temperatures for Govee H5072, Govee H5075, Govee H5051 and Govee H5052**
 
 **NOTE** FOR THOSE WHO ARE UPGRADING FROM V0.5 - a restart of the host device is suggested after upgrading this component.  The previous implementation may still have processes running or sockets open which.could cause unforeseeable issues.  I apologize for the inconvenience and future updates should go much smoother.  
 
