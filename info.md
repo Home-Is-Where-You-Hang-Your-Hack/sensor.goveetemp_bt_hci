@@ -3,6 +3,7 @@
 ## 0.8.0
 **Fix:**
   - **Decode negative temperatures for Govee H5072, Govee H5075, Govee H5051 and Govee H5052**
+  - **Catch remaining StatisticsError instances in sensor**
 
 **NOTE** FOR THOSE WHO ARE UPGRADING FROM V0.5 - a restart of the host device is suggested after upgrading this component.  The previous implementation may still have processes running or sockets open which.could cause unforeseeable issues.  I apologize for the inconvenience and future updates should go much smoother.  
 

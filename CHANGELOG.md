@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## 0.8.0
 **Fix:**
   - **Decode negative temperature for Govee H5072, Govee H5075, Govee H5051 and Govee H5052**
+  - **Catch remaining StatisticsError instances in sensor**
 
 ## 0.7.1
 **Fix:**
