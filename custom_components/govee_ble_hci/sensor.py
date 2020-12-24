@@ -150,25 +150,29 @@ def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
             )
 
             if device.last_packet:
-                humstate_med = float(device.median_humidity)
-                humstate_mean = float(device.mean_humidity)
-                tempstate_med = float(device.median_temperature)
-                tempstate_mean = float(device.mean_temperature)
+                if device.median_humidity is not None:
+                    humstate_med = float(device.median_humidity)
+                    getattr(sensors[1], ATTR)["median"] = humstate_med
+                    if use_median:
+                        setattr(sensors[1], "_state", humstate_med)
 
-                getattr(sensors[0], ATTR)["median"] = tempstate_med
-                getattr(sensors[0], ATTR)["mean"] = tempstate_mean
-                if use_median:
-                    setattr(sensors[0], "_state", tempstate_med)
-                else:
-                    setattr(sensors[0], "_state", tempstate_mean)
+                if device.mean_humidity is not None:
+                    humstate_mean = float(device.mean_humidity)
+                    getattr(sensors[1], ATTR)["mean"] = humstate_mean
+                    if not use_median:
+                        setattr(sensors[1], "_state", humstate_mean)
 
-                getattr(sensors[1], ATTR)["median"] = humstate_med
-                getattr(sensors[1], ATTR)["mean"] = humstate_mean
+                if device.median_temperature is not None:
+                    tempstate_med = float(device.median_temperature)
+                    getattr(sensors[0], ATTR)["median"] = tempstate_med
+                    if use_median:
+                        setattr(sensors[0], "_state", tempstate_med)
 
-                if use_median:
-                    setattr(sensors[1], "_state", humstate_med)
-                else:
-                    setattr(sensors[1], "_state", humstate_mean)
+                if device.mean_temperature is not None:
+                    tempstate_mean = float(device.mean_temperature)
+                    getattr(sensors[0], ATTR)["mean"] = tempstate_mean
+                    if not use_median:
+                        setattr(sensors[0], "_state", tempstate_mean)
 
                 for sensor in sensors:
                     last_packet = device.last_packet

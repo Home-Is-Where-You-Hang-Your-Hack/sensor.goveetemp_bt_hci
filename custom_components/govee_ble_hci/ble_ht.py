@@ -114,36 +114,48 @@ class BLE_HT_data:
             self._rssi.append(value)
 
     @property
-    def mean_temperature(self) -> float:
+    def mean_temperature(self) -> Union[float, None]:
         """Mean temperature of values collected."""
-        avg = sts.mean(self._map_packet_data_attrs("temperature"))
-        if hasattr(self, "_decimal_places"):
-            return round(avg, self._decimal_places)
-        return avg
+        try:
+            avg = sts.mean(self._map_packet_data_attrs("temperature"))
+            if hasattr(self, "_decimal_places"):
+                return round(avg, self._decimal_places)
+            return avg
+        except (AssertionError, sts.StatisticsError):
+            return None
 
     @property
-    def median_temperature(self) -> float:
+    def median_temperature(self) -> Union[float, None]:
         """Median temperature of values collected."""
-        avg = sts.median(self._map_packet_data_attrs("temperature"))
-        if hasattr(self, "_decimal_places"):
-            return round(avg, self._decimal_places)
-        return avg
+        try:
+            avg = sts.median(self._map_packet_data_attrs("temperature"))
+            if hasattr(self, "_decimal_places"):
+                return round(avg, self._decimal_places)
+            return avg
+        except (AssertionError, sts.StatisticsError):
+            return None
 
     @property
-    def mean_humidity(self) -> float:
+    def mean_humidity(self) -> Union[float, None]:
         """Mean humidity of values collected."""
-        avg = sts.mean(self._map_packet_data_attrs("humidity"))
-        if hasattr(self, "_decimal_places"):
-            return round(avg, self._decimal_places)
-        return avg
+        try:
+            avg = sts.mean(self._map_packet_data_attrs("humidity"))
+            if hasattr(self, "_decimal_places"):
+                return round(avg, self._decimal_places)
+            return avg
+        except (AssertionError, sts.StatisticsError):
+            return None
 
     @property
-    def median_humidity(self) -> float:
+    def median_humidity(self) -> Union[float, None]:
         """Median humidity of values collected."""
-        avg = sts.median(self._map_packet_data_attrs("humidity"))
-        if hasattr(self, "_decimal_places"):
-            return round(avg, self._decimal_places)
-        return avg
+        try:
+            avg = sts.median(self._map_packet_data_attrs("humidity"))
+            if hasattr(self, "_decimal_places"):
+                return round(avg, self._decimal_places)
+            return avg
+        except (AssertionError, sts.StatisticsError):
+            return None
 
     def update(
         self,
