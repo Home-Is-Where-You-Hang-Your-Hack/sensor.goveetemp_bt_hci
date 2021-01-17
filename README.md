@@ -9,7 +9,7 @@ A custom component for [Home Assistant](https://www.home-assistant.io) that list
 * [Govee H5075](https://www.amazon.com/Govee-Temperature-Humidity-Notification-Monitor/dp/B07Y36FWTT/)
 * Govee H5101
 * [Govee H5102](https://www.amazon.com/gp/product/B087313N8F/)
-* Govee H5177
+* [Govee H5177](https://www.amazon.com/gp/product/B08C9VYMHY)
 
 ## Installation
 
