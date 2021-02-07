@@ -53,6 +53,7 @@ Specify the sensor platform `govee_ble_hci` and a list of devices with unique MA
 ```
 sensor:
   - platform: govee_ble_hci
+    period: 300
     govee_devices:
       - mac: "A4:C1:38:A1:A2:A3"
         name: Bedroom
