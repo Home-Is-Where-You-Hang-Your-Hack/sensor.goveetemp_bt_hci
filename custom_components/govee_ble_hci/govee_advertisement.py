@@ -114,10 +114,10 @@ class GoveeAdvertisement:
                 self.battery = int(self.mfg_data[7])
                 self.model = "Govee H5101/H5102"
             elif self.check_is_gvh5179():
-                temp, humidity, battery = struct.unpack_from("<HHB", self.mfg_data, 6)
+                temp, hum, batt = struct.unpack_from("<HHB", self.mfg_data, 6)
                 self.temperature = float(twos_complement(temp) / 100.0)
-                self.humidity = float(humidity / 100.0)
-                self.battery = int(battery)
+                self.humidity = float(hum / 100.0)
+                self.battery = int(batt)
                 self.packet = 1
                 self.model = "Govee H5179"
             elif self.check_is_gvh5074() or self.check_is_gvh5051():
