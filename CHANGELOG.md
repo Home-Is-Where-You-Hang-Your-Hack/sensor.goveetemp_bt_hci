@@ -1,5 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
+## 0.9.1
+**Fix:**
+  - Add version to manifest.json
+
 ## 0.9.0
 **Feature:**
   - **Added support for the Govee H5179** (Thank you [skilau](https://github.com/skilau))

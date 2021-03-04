@@ -4,5 +4,6 @@
   "documentation": "https://github.com/Home-Is-Where-You-Hang-Your-Hack/sensor.goveetemp_bt_hci",
   "requirements": ["bleson==0.1.6"],
   "dependencies": [],
-  "codeowners": ["@thrilleratplay"]
+  "codeowners": ["@thrilleratplay"],
+  "version": "0.9.1"
 }
