@@ -1,8 +1,8 @@
 {% if installed or pending_update %}
 
-## 0.9.1
+## 0.9.2
 **Fix:**
-  - Add version to manifest.json
+  - **Update bleson package to version 0.18, fixes non BLE spec device name errors**
 
 **NOTE** FOR THOSE WHO ARE UPGRADING FROM V0.5 - a restart of the host device is suggested after upgrading this component.  The previous implementation may still have processes running or sockets open which.could cause unforeseeable issues.  I apologize for the inconvenience and future updates should go much smoother.  
 

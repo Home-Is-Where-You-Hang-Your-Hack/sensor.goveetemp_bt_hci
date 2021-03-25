@@ -1,8 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
+
+## 0.9.2
+**Fix:**
+  - **Update bleson package to version 0.18, fixes non BLE spec device name errors**
+
 ## 0.9.1
 **Fix:**
-  - Add version to manifest.json
+  - **Add version to manifest.json**
 
 ## 0.9.0
 **Feature:**
