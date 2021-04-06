@@ -25,7 +25,7 @@ DEFAULT_HCI_DEVICE = "hci0"
 """Fixed constants."""
 
 # Sensor measurement limits to exclude erroneous spikes from the results
-CONF_TMIN = -20.0
+CONF_TMIN = -30.0
 CONF_TMAX = 60.0
 CONF_HMIN = 0.0
 CONF_HMAX = 99.9
