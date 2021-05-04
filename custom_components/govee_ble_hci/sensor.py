@@ -2,13 +2,14 @@
 from datetime import timedelta
 import logging
 import voluptuous as vol
-from typing import List
+from typing import List, Optional, Dict, Set, Tuple
 
 from bleson import get_provider  # type: ignore
 from bleson.core.hci.constants import EVT_LE_ADVERTISING_REPORT  # type: ignore
 from bleson.core.types import BDAddress  # type: ignore
 from bleson.core.hci.type_converters import hex_string  # type: ignore
 
+from homeassistant.exceptions import HomeAssistantError  # type: ignore
 from homeassistant.components.sensor import PLATFORM_SCHEMA  # type: ignore
 import homeassistant.helpers.config_validation as cv  # type: ignore
 from homeassistant.helpers.entity import Entity  # type: ignore
@@ -23,22 +24,26 @@ from homeassistant.const import (  # type: ignore
 )
 
 from .const import (
-    DEFAULT_ROUNDING,
-    DEFAULT_DECIMALS,
-    DEFAULT_PERIOD,
-    DEFAULT_LOG_SPIKES,
-    DEFAULT_USE_MEDIAN,
-    DEFAULT_HCI_DEVICE,
-    CONF_ROUNDING,
     CONF_DECIMALS,
-    CONF_PERIOD,
-    CONF_LOG_SPIKES,
-    CONF_USE_MEDIAN,
-    CONF_HCITOOL_ACTIVE,
-    CONF_HCI_DEVICE,
-    CONF_GOVEE_DEVICES,
     CONF_DEVICE_MAC,
     CONF_DEVICE_NAME,
+    CONF_GOVEE_DEVICES,
+    CONF_HCI_DEVICE,
+    CONF_LOG_SPIKES,
+    CONF_PERIOD,
+    CONF_ROUNDING,
+    CONF_TEMP_RANGE_MAX_CELSIUS,
+    CONF_TEMP_RANGE_MIN_CELSIUS,
+    CONF_USE_MEDIAN,
+    DEFAULT_DECIMALS,
+    DEFAULT_HCI_DEVICE,
+    DEFAULT_LOG_SPIKES,
+    DEFAULT_PERIOD,
+    DEFAULT_ROUNDING,
+    DEFAULT_TEMP_RANGE_MAX,
+    DEFAULT_TEMP_RANGE_MIN,
+    DEFAULT_USE_MEDIAN,
+    DOMAIN,
 )
 
 from .govee_advertisement import GoveeAdvertisement
@@ -62,9 +67,14 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_PERIOD, default=DEFAULT_PERIOD): cv.positive_int,
         vol.Optional(CONF_LOG_SPIKES, default=DEFAULT_LOG_SPIKES): cv.boolean,
         vol.Optional(CONF_USE_MEDIAN, default=DEFAULT_USE_MEDIAN): cv.boolean,
-        vol.Optional(CONF_HCITOOL_ACTIVE): cv.boolean,  # noqa
         vol.Optional(CONF_GOVEE_DEVICES): vol.All([DEVICES_SCHEMA]),
         vol.Optional(CONF_HCI_DEVICE, default=DEFAULT_HCI_DEVICE): cv.string,
+        vol.Optional(
+            CONF_TEMP_RANGE_MIN_CELSIUS, default=DEFAULT_TEMP_RANGE_MIN
+        ): float,
+        vol.Optional(
+            CONF_TEMP_RANGE_MAX_CELSIUS, default=DEFAULT_TEMP_RANGE_MAX
+        ): float,
     }
 )
 
@@ -77,12 +87,6 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
     """Set up the sensor platform."""
     _LOGGER.debug("Starting Govee HCI Sensor")
-
-    if hasattr(config, "CONF_HCITOOL_ACTIVE"):
-        _LOGGER.warning(
-            "CONF_HCITOOL_ACTIVE has been deprecated "
-            "and will be removed in a future release."
-        )
 
     govee_devices: List[BLE_HT_data] = []  # Data objects of configured devices
     sensors_by_mac = {}  # HomeAssistant sensors by MAC address
@@ -117,9 +121,14 @@ def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
         """Initialize configured Govee devices."""
         for conf_dev in config[CONF_GOVEE_DEVICES]:
             # Initialize BLE HT data objects
-            mac = conf_dev["mac"]
-            device = BLE_HT_data(mac, conf_dev.get("name", None))
+            mac: str = conf_dev["mac"]
+            given_name = conf_dev.get("name", None)
+
+            device = BLE_HT_data(mac, given_name)
             device.log_spikes = config[CONF_LOG_SPIKES]
+            device.maximum_temperature = config[CONF_TEMP_RANGE_MAX_CELSIUS]
+            device.minimum_temperature = config[CONF_TEMP_RANGE_MIN_CELSIUS]
+
             if config[CONF_ROUNDING]:
                 device.decimal_places = config[CONF_DECIMALS]
             govee_devices.append(device)
@@ -203,10 +212,21 @@ def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
 
     # Initalize bluetooth adapter and begin scanning
     # XXX: will not work if there are more than 10 HCI devices
-    adapter = get_provider().get_adapter(int(config[CONF_HCI_DEVICE][-1]))
-    adapter._handle_meta_event = handle_meta_event
-    hass.bus.listen("homeassistant_stop", adapter.stop_scanning)
-    adapter.start_scanning()
+    try:
+        adapter = get_provider().get_adapter(int(config[CONF_HCI_DEVICE][-1]))
+        adapter._handle_meta_event = handle_meta_event
+        hass.bus.listen("homeassistant_stop", adapter.stop_scanning)
+        adapter.start_scanning()
+    except (RuntimeError, OSError, PermissionError) as error:
+        error_msg = "Error connecting to Bluetooth adapter: {}\n\n".format(error)
+        error_msg += "Bluetooth adapter troubleshooting:\n"
+        error_msg += "  -If running HASS, ensure the correct HCI device is being"
+        error_msg += " used. Check by logging into HA command line and execute:\n"
+        error_msg += "          gdbus introspect --system --dest org.bluez --object-path /org/bluez | fgrep -i hci\n"
+        error_msg += "  -If running Home Assistant in Docker, "
+        error_msg += "make sure it run with the --privileged flag.\n"
+        # _LOGGER.error(error_msg)
+        raise HomeAssistantError(error_msg) from error
 
     # Initialize configured Govee devices
     init_configureed_devices()
@@ -228,6 +248,7 @@ class TemperatureSensor(Entity):
         self._battery = None
         self._unique_id = "t_" + mac.replace(":", "")
         self._name = name
+        self._mac = mac.replace(":", "")
         self._device_state_attributes = {}
 
     @property
@@ -249,6 +270,15 @@ class TemperatureSensor(Entity):
     def device_class(self):
         """Return the unit of measurement."""
         return DEVICE_CLASS_TEMPERATURE
+
+    @property
+    def device_info(self) -> Optional[Dict[str, Set[Tuple[str, str]]]]:
+        """Temperature Device Info."""
+        return {
+            "identifiers": {(DOMAIN, self._mac)},
+            "name": self._name,
+            "manufacturer": "Govee",
+        }
 
     @property
     def should_poll(self) -> bool:
@@ -283,6 +313,7 @@ class HumiditySensor(Entity):
         self._battery = None
         self._name = name
         self._unique_id = "h_" + mac.replace(":", "")
+        self._mac = mac.replace(":", "")
         self._device_state_attributes = {}
 
     @property
@@ -306,6 +337,15 @@ class HumiditySensor(Entity):
         return DEVICE_CLASS_HUMIDITY
 
     @property
+    def device_info(self) -> Optional[Dict[str, Set[Tuple[str, str]]]]:
+        """Humidity Device Info."""
+        return {
+            "identifiers": {(DOMAIN, self._mac)},
+            "name": self._name,
+            "manufacturer": "Govee",
+        }
+
+    @property
     def should_poll(self) -> bool:
         """No polling needed."""
         return False
@@ -316,7 +356,7 @@ class HumiditySensor(Entity):
         return self._device_state_attributes
 
     @property
-    def unique_id(self):
+    def unique_id(self) -> str:
         """Return a unique ID."""
         return self._unique_id
 

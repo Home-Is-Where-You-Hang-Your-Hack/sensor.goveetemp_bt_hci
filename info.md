@@ -1,8 +1,17 @@
 {% if installed or pending_update %}
 
-## 0.9.2
+## 0.10.0
+**Feat:**
+  - **Minimum and maximum temperature configurable.**  Base on [SteveOnorato/moat_temp_hum_ble](https://github.com/SteveOnorato/moat_temp_hum_ble/).  Thank you @SteveOnorato
+  - **Devices now related.** Thank you @natekspencer
 **Fix:**
-  - **Update bleson package to version 0.18, fixes non BLE spec device name errors**
+  - **Catch Bluetooth adapter error and provide useful information.**
+**Chore:**
+  - **Removed "CONF_HCITOOL_ACTIVE"**
+
+
+**BREAKING CHANGE** - With the removal of `CONF_HCITOOL_ACTIVE` if `hcitool_active` is still in your config, Home Assistant will not start.  Please remove this deprecated flag.
+
 
 **NOTE** FOR THOSE WHO ARE UPGRADING FROM V0.5 - a restart of the host device is suggested after upgrading this component.  The previous implementation may still have processes running or sockets open which.could cause unforeseeable issues.  I apologize for the inconvenience and future updates should go much smoother.  
 

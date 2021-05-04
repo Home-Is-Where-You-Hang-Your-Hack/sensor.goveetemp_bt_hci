@@ -4,8 +4,8 @@ import statistics as sts
 import logging
 
 from .const import (
-    CONF_TMIN,
-    CONF_TMAX,
+    DEFAULT_TEMP_RANGE_MIN,
+    DEFAULT_TEMP_RANGE_MAX,
     CONF_HMIN,
     CONF_HMAX,
 )
@@ -31,12 +31,16 @@ class BLE_HT_data:
     _packet_data: List[BLE_HT_packet]
     _decimal_places: Optional[int]
     _log_spikes: bool
+    _min_temp: float
+    _max_temp: float
 
     def __init__(self, mac: str, description: Optional[str]) -> None:
         """Init."""
         self._mac = mac
         self._desc = description
         self._log_spikes = False
+        self._min_temp = DEFAULT_TEMP_RANGE_MIN
+        self._max_temp = DEFAULT_TEMP_RANGE_MAX
         self.reset()
 
     @property
@@ -114,6 +118,26 @@ class BLE_HT_data:
             self._rssi.append(value)
 
     @property
+    def maximum_temperature(self) -> float:
+        """Get upper bound of temperature."""
+        return self._max_temp
+
+    @maximum_temperature.setter
+    def maximum_temperature(self, value: float) -> None:
+        """Set upper bound of temperature."""
+        self._max_temp = value
+
+    @property
+    def minimum_temperature(self) -> float:
+        """Get lower bound of temperature."""
+        return self._min_temp
+
+    @minimum_temperature.setter
+    def minimum_temperature(self, value: float) -> None:
+        """Set lower bound of temperature."""
+        self._min_temp = value
+
+    @property
     def mean_temperature(self) -> Union[float, None]:
         """Mean temperature of values collected."""
         try:
@@ -167,7 +191,7 @@ class BLE_HT_data:
         new_packet = BLE_HT_packet()
 
         # Check if temperature within bounds
-        if temperature is not None and CONF_TMAX >= temperature >= CONF_TMIN:
+        if temperature is not None and self._max_temp >= temperature >= self._min_temp:
             new_packet.temperature = temperature
         elif self._log_spikes:
             err = "Temperature spike: {} ({})".format(temperature, self._mac)

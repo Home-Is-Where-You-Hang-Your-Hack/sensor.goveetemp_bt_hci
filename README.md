@@ -77,6 +77,8 @@ sensor:
 | `log_spikes` |  Boolean | `False` | Puts information about each erroneous spike in the Home Assistant log. |
 | `use_median` | Boolean  | `False` | Use median as sensor output instead of mean (helps with "spiky" sensors). Please note that both the median and the mean values in any case are present as the sensor state attributes. |
 | `hci_device`| string | `hci0` | HCI device name used for scanning. |
+| `temp_range_min_celsius` | float | `-20.0` | Set the lower bound of reasonable measurements, in Celsius. Temperature measurements lower than this will be discarded. *Warning*: temperatures returned by the Govee device that are outside of the specified range may not be accurate.  It is not advised to change this value.|
+| `temp_range_max_celsius` | float | `60.0` | Set the upper bound of reasonable measurements, in Celsius. Temperature measurements higher than this will be discarded. *Warning*: temperatures returned by the Govee device that are outside of the specified range may not be accurate.  It is not advised to change this value.|
 
 Example with all defaults:
 ```
