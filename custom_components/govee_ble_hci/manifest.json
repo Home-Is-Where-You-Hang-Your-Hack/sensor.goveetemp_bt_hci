@@ -1,9 +1,10 @@
 {
-  "domain": "sensor",
+  "domain": "govee_ble_hci",
   "name": "Govee BLE HCI monitor sensor integration",
   "documentation": "https://github.com/Home-Is-Where-You-Hang-Your-Hack/sensor.goveetemp_bt_hci",
   "requirements": ["bleson==0.1.8"],
   "dependencies": [],
   "codeowners": ["@thrilleratplay"],
-  "version": "0.10.0"
+  "version": "0.10.0",
+  "iot_class": "local_polling"
 }
