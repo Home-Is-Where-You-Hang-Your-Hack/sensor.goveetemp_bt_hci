@@ -66,7 +66,7 @@ class GoveeAdvertisement:
             self.rssi = rssi_from_byte(data[-1])
             self.raw_data = data[10:-1]
             self.flags = 6
-            self.sensor_index = 0
+            self.sensor_number = 0
             self.name = None
             self.packet = None
             self.temperature = None
@@ -120,7 +120,7 @@ class GoveeAdvertisement:
                 self.temperature = decode_temps(self.packet)
                 self.humidity = float((self.packet % 1000) / 10)
                 self.battery = int(self.mfg_data[8])
-                self.sensor_index = int(self.mfg_data[3])
+                self.sensor_number = int(self.mfg_data[4])
                 self.model = "Govee H5178"
             elif self.check_is_gvh5179():
                 temp, hum, batt = unpack_from("<HHB", self.mfg_data, 6)

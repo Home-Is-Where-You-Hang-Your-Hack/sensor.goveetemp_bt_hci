@@ -33,14 +33,21 @@ class BLE_HT_data:
     _log_spikes: bool
     _min_temp: float
     _max_temp: float
+    _sensor_number: Optional[int]
 
-    def __init__(self, mac: str, description: Optional[str]) -> None:
+    def __init__(
+        self,
+        mac: str,
+        description: Optional[str],
+        sensor_number: Optional[int]
+    ) -> None:
         """Init."""
         self._mac = mac
         self._desc = description
         self._log_spikes = False
         self._min_temp = DEFAULT_TEMP_RANGE_MIN
         self._max_temp = DEFAULT_TEMP_RANGE_MAX
+        self._sensor_number = sensor_number
         self.reset()
 
     @property
@@ -180,6 +187,10 @@ class BLE_HT_data:
             return avg
         except (AssertionError, sts.StatisticsError):
             return None
+
+    @property
+    def sensor_number(self) -> int:
+        return self._sensor_number
 
     def update(
         self,

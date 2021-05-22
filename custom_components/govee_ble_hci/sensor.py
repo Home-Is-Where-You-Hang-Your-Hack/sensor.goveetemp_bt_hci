@@ -27,6 +27,7 @@ from .const import (
     CONF_DECIMALS,
     CONF_DEVICE_MAC,
     CONF_DEVICE_NAME,
+    CONF_DEVICE_SENSOR_NUMBER,
     CONF_GOVEE_DEVICES,
     CONF_HCI_DEVICE,
     CONF_LOG_SPIKES,
@@ -57,6 +58,7 @@ DEVICES_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_DEVICE_MAC): cv.string,
         vol.Optional(CONF_DEVICE_NAME): cv.string,
+        vol.Optional(CONF_DEVICE_SENSOR_NUMBER): int,
     }
 )
 
@@ -89,7 +91,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
     _LOGGER.debug("Starting Govee HCI Sensor")
 
     govee_devices: List[BLE_HT_data] = []  # Data objects of configured devices
-    sensors_by_mac = {}  # HomeAssistant sensors by MAC address
+    sensors_by_device = {}  # HomeAssistant sensors by their BLE_HT_data device
     adapter = None
 
     def handle_meta_event(hci_packet) -> None:
@@ -109,6 +111,10 @@ def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
                     # parse packet data
                     ga = GoveeAdvertisement(hci_packet.data)
 
+                    #  Check to make sure sensor numbers match
+                    if ga.sensor_number != device.sensor_number:
+                        continue
+
                     # If mfg data information is defined, update values
                     if ga.packet is not None:
                         device.update(ga.temperature, ga.humidity, ga.packet)
@@ -123,8 +129,9 @@ def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
             # Initialize BLE HT data objects
             mac: str = conf_dev["mac"]
             given_name = conf_dev.get("name", None)
+            sensor_number = conf_dev.get("sensor_number", 0)
 
-            device = BLE_HT_data(mac, given_name)
+            device = BLE_HT_data(mac, given_name, sensor_number)
             device.log_spikes = config[CONF_LOG_SPIKES]
             device.maximum_temperature = config[CONF_TEMP_RANGE_MAX_CELSIUS]
             device.minimum_temperature = config[CONF_TEMP_RANGE_MIN_CELSIUS]
@@ -135,10 +142,10 @@ def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
 
             # Initialize HA sensors
             name = conf_dev.get("name", mac)
-            temp_sensor = TemperatureSensor(mac, name)
-            hum_sensor = HumiditySensor(mac, name)
+            temp_sensor = TemperatureSensor(mac, name, sensor_number)
+            hum_sensor = HumiditySensor(mac, name, sensor_number)
             sensors = [temp_sensor, hum_sensor]
-            sensors_by_mac[mac] = sensors
+            sensors_by_device[device] = sensors
             add_entities(sensors)
 
     def update_ble_devices(config) -> None:
@@ -150,7 +157,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
         textattr = "last median of" if use_median else "last mean of"
 
         for device in govee_devices:
-            sensors = sensors_by_mac[device.mac]
+            sensors = sensors_by_device[device]
 
             _LOGGER.debug(
                 "Last mfg data for {}: {}".format(
@@ -242,11 +249,11 @@ def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
 class TemperatureSensor(Entity):
     """Representation of a sensor."""
 
-    def __init__(self, mac: str, name: str):
+    def __init__(self, mac: str, name: str, sensor_number: int):
         """Initialize the sensor."""
         self._state = None
         self._battery = None
-        self._unique_id = "t_" + mac.replace(":", "")
+        self._unique_id = "t_{}_{}".format(mac.replace(":", ""), sensor_number)
         self._name = name
         self._mac = mac.replace(":", "")
         self._device_state_attributes = {}
@@ -307,12 +314,12 @@ class TemperatureSensor(Entity):
 class HumiditySensor(Entity):
     """Representation of a Sensor."""
 
-    def __init__(self, mac: str, name: str):
+    def __init__(self, mac: str, name: str, sensor_number: int):
         """Initialize the sensor."""
         self._state = None
         self._battery = None
         self._name = name
-        self._unique_id = "h_" + mac.replace(":", "")
+        self._unique_id = "h_{}_{}".format(mac.replace(":", ""), sensor_number)
         self._mac = mac.replace(":", "")
         self._device_state_attributes = {}
 
