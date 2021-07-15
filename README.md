@@ -1,5 +1,16 @@
 # Govee Temperature/Humidity BLE Home Assistant Component
 
+**<u>NOTICE Jul, 15,2021</u>:**  
+**Govee support has been added to [Passive BLE Monitor integration](https://github.com/custom-components/ble_monitor) as of version 4.1.0.**
+
+For any new users I would strongly suggest using that integration.  BLE Monitor has better support Bluetooth support (including Intel NUC), more sensors and sensor discovery so there is no longer a need to list MAC addresses.  
+
+Existing users: I will continue to support this component for the foreseeable future but new development will likely only occur for [Passive BLE Monitor integration](https://github.com/custom-components/ble_monitor).  Sadly, you will not be able to use both components at the same time.
+
+Thank you @Ernst79 for adding the Govee devices.  Ultimately, it makes more sense for you, the end users, to have one component that does everything well and to pool development resources to ensure issues can be resolved quickly.
+
+## Govee Temperature/Humidity BLE Home Assistant Component
+
 A custom component for [Home Assistant](https://www.home-assistant.io) that listens for the advertisement message broadcast by Govee Bluetooth Thermometer/Hygrometers.
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=plastic)](https://github.com/custom-components/hacs)
