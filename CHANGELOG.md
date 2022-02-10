@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 0.10.1
+**Fix:**
+  - **Renamed `device_state_attributes` to `extra_state_attributes`.  Remove warnings related to Home Assistant [PR#47304](https://github.com/home-assistant/core/pull/47304)**
+
 ## 0.10.0
 **Feat:**
   - **Minimum and maximum temperature configurable.**  Base on [SteveOnorato/moat_temp_hum_ble](https://github.com/SteveOnorato/moat_temp_hum_ble/).  Thank you @SteveOnorato

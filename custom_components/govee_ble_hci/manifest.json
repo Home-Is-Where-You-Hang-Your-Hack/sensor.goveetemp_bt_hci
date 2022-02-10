@@ -5,6 +5,6 @@
   "requirements": ["bleson==0.1.8"],
   "dependencies": [],
   "codeowners": ["@thrilleratplay"],
-  "version": "0.10.0",
+  "version": "0.10.1",
   "iot_class": "local_polling"
 }
