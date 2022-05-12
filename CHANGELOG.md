@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 0.10.2
+**Fix:**
+  - **Refactor to use SensorEntityDescription for future Home Assistant compatability**
+
 ## 0.10.1
 **Fix:**
   - **Renamed `device_state_attributes` to `extra_state_attributes`.  Remove warnings related to Home Assistant [PR#47304](https://github.com/home-assistant/core/pull/47304)**
