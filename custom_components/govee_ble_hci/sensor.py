@@ -2,7 +2,7 @@
 from datetime import timedelta
 import logging
 import voluptuous as vol
-from typing import List, Optional, Dict, Set, Tuple
+from typing import Any, Collection, List, Optional, Dict, Sequence, Set, Tuple
 
 from bleson import get_provider  # type: ignore
 from bleson.core.hci.constants import EVT_LE_ADVERTISING_REPORT  # type: ignore
@@ -12,14 +12,21 @@ from bleson.core.hci.type_converters import hex_string  # type: ignore
 from homeassistant.exceptions import HomeAssistantError  # type: ignore
 from homeassistant.components.sensor import PLATFORM_SCHEMA  # type: ignore
 import homeassistant.helpers.config_validation as cv  # type: ignore
-from homeassistant.helpers.entity import Entity  # type: ignore
+from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.event import track_point_in_utc_time  # type: ignore
 import homeassistant.util.dt as dt_util  # type: ignore
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntityDescription,
+    SensorStateClass,
+)
 
 from homeassistant.const import (  # type: ignore
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_HUMIDITY,
     TEMP_CELSIUS,
+    PERCENTAGE,
     ATTR_BATTERY_LEVEL,
 )
 
@@ -80,7 +87,6 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 ###############################################################################
 
-
 #
 # Configure for Home Assistant
 #
@@ -135,8 +141,24 @@ def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
 
             # Initialize HA sensors
             name = conf_dev.get("name", mac)
-            temp_sensor = TemperatureSensor(mac, name)
-            hum_sensor = HumiditySensor(mac, name)
+
+            tempDescription = SensorEntityDescription(
+                key="temperature",
+                name=name,
+                native_unit_of_measurement=TEMP_CELSIUS,
+                device_class=SensorDeviceClass.TEMPERATURE,
+                state_class=SensorStateClass.MEASUREMENT,
+            )
+  
+            humDescription= SensorEntityDescription(
+                key="humidity",
+                name=name,
+                native_unit_of_measurement=PERCENTAGE,
+                device_class=SensorDeviceClass.HUMIDITY,
+                state_class=SensorStateClass.MEASUREMENT,
+            )
+            temp_sensor = TemperatureSensor(mac, name,  tempDescription)
+            hum_sensor = HumiditySensor(mac, name,  humDescription)
             sensors = [temp_sensor, hum_sensor]
             sensors_by_mac[mac] = sensors
             add_entities(sensors)
@@ -239,10 +261,10 @@ def setup_platform(hass, config, add_entities, discovery_info=None) -> None:
 #
 # HomeAssistant Temperature Sensor Class
 #
-class TemperatureSensor(Entity):
+class TemperatureSensor(RestoreEntity, SensorEntity):
     """Representation of a sensor."""
 
-    def __init__(self, mac: str, name: str):
+    def __init__(self, mac: str, name: str, description: SensorEntityDescription):
         """Initialize the sensor."""
         self._state = None
         self._battery = None
@@ -250,6 +272,7 @@ class TemperatureSensor(Entity):
         self._name = name
         self._mac = mac.replace(":", "")
         self._device_state_attributes = {}
+        self.entity_description = description
 
     @property
     def name(self) -> str:
@@ -257,12 +280,12 @@ class TemperatureSensor(Entity):
         return "{} temp".format(self._name)
 
     @property
-    def state(self):
+    def native_value(self):
         """Return the state of the sensor."""
         return self._state
 
     @property
-    def unit_of_measurement(self) -> str:
+    def native_unit_of_measurement(self) -> str:
         """Return the unit of measurement."""
         return TEMP_CELSIUS
 
@@ -272,7 +295,7 @@ class TemperatureSensor(Entity):
         return DEVICE_CLASS_TEMPERATURE
 
     @property
-    def device_info(self) -> Optional[Dict[str, Set[Tuple[str, str]]]]:
+    def device_info(self) -> Optional[Dict[str, Collection[Sequence[str]]]]:
         """Temperature Device Info."""
         return {
             "identifiers": {(DOMAIN, self._mac)},
@@ -304,10 +327,10 @@ class TemperatureSensor(Entity):
 #
 # HomeAssistant Humidity Sensor Class
 #
-class HumiditySensor(Entity):
+class HumiditySensor(RestoreEntity, SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, mac: str, name: str):
+    def __init__(self, mac: str, name: str, description: SensorEntityDescription):
         """Initialize the sensor."""
         self._state = None
         self._battery = None
@@ -315,6 +338,7 @@ class HumiditySensor(Entity):
         self._unique_id = "h_" + mac.replace(":", "")
         self._mac = mac.replace(":", "")
         self._device_state_attributes = {}
+        self.entity_description = description
 
     @property
     def name(self) -> str:
@@ -337,7 +361,7 @@ class HumiditySensor(Entity):
         return DEVICE_CLASS_HUMIDITY
 
     @property
-    def device_info(self) -> Optional[Dict[str, Set[Tuple[str, str]]]]:
+    def device_info(self) ->  Optional[Dict[str, Collection[Sequence[str]]]]:
         """Humidity Device Info."""
         return {
             "identifiers": {(DOMAIN, self._mac)},
