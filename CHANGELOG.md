@@ -3,7 +3,11 @@ All notable changes to this project will be documented in this file.
 
 ## 0.10.2
 **Fix:**
-  - **Refactor to use SensorEntityDescription for future Home Assistant compatability**
+  - **Refactor to use SensorEntityDescription for future Home Assistant compatibility**
+
+**Possible Breaking Change**
+For those who display temperature fahrenheit, due a change with how Home Assistant handles sensors, your existing sensors may display in Celsius after this update.
+ Under Configuration -> Devices & Services -> Entities tab,  the settings for each temperature sensor can be modified to display F as the unit of measurement.
 
 ## 0.10.1
 **Fix:**
