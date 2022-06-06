@@ -22,7 +22,7 @@ For those who display temperature fahrenheit, due a change with how Home Assista
 {% endif %}
 
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 
 # Govee Temperature/Humidity BLE Home Assistant Component
 

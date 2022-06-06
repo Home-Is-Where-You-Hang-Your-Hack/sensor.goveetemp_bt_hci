@@ -13,7 +13,7 @@ Thank you @Ernst79 for adding the Govee devices.  Ultimately, it makes more sens
 
 A custom component for [Home Assistant](https://www.home-assistant.io) that listens for the advertisement message broadcast by Govee Bluetooth Thermometer/Hygrometers.
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=plastic)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=plastic)](https://github.com/hacs/integration)
 ![hassfest_badge](https://github.com/Home-Is-Where-You-Hang-Your-Hack/sensor.goveetemp_bt_hci/actions/workflows/hassfest.yaml/badge.svg)
 
 ## Supported Devices
