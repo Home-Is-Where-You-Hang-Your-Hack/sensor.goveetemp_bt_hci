@@ -290,11 +290,6 @@ class TemperatureSensor(RestoreEntity, SensorEntity):
         return TEMP_CELSIUS
 
     @property
-    def device_class(self):
-        """Return the unit of measurement."""
-        return DEVICE_CLASS_TEMPERATURE
-
-    @property
     def device_info(self) -> Optional[Dict[str, Collection[Sequence[str]]]]:
         """Temperature Device Info."""
         return {
@@ -354,11 +349,6 @@ class HumiditySensor(RestoreEntity, SensorEntity):
     def unit_of_measurement(self) -> str:
         """Return the unit of measurement."""
         return "%"
-
-    @property
-    def device_class(self):
-        """Return the unit of measurement."""
-        return DEVICE_CLASS_HUMIDITY
 
     @property
     def device_info(self) ->  Optional[Dict[str, Collection[Sequence[str]]]]:
