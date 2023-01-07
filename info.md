@@ -9,13 +9,9 @@ Existing users: I will continue to support this component for the foreseeable fu
 
 Thank you @Ernst79 for adding the Govee devices.  Ultimately, it makes more sense for you, the end users, to have one component that does everything well and to pool development resources to ensure issues can be resolved quickly.
 
-## 0.10.2
-**Fix:**
-  - **Refactor to use SensorEntityDescription for future Home Assistant compatibility**
-
-**Possible Breaking Change**
-For those who display temperature fahrenheit, due a change with how Home Assistant handles sensors, your existing sensors may display in Celsius after this update.
- Under Configuration -> Devices & Services -> Entities tab,  the settings for each temperature sensor can be modified to display F as the unit of measurement.
+## 0.10.3
+**Chore:**
+  - **Remove deprecated `device_class` properties.**
 
 **NOTE** FOR THOSE WHO ARE UPGRADING FROM V0.5 - a restart of the host device is suggested after upgrading this component.  The previous implementation may still have processes running or sockets open which.could cause unforeseeable issues.  I apologize for the inconvenience and future updates should go much smoother.  
 

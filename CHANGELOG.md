@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 0.10.3
+**Chore:**
+  - **Remove deprecated `device_class` properties.**
+
 ## 0.10.2
 **Fix:**
   - **Refactor to use SensorEntityDescription for future Home Assistant compatibility**
